@@ -44,7 +44,38 @@ Unlike traditional machine learning approaches that rely strictly on word freque
   Linear Dropout  → (Classification Head)
         ↓
     Prediction    → [fake_urgency | hidden_cost | disguised_ad | normal]
-AI Concepts ImplementedTransfer Learning & BERT Fine-TuningSubword Tokenization (BertTokenizer)Stratified Train-Test Splitting (80-20 Split)Weighted Optimization Metrics for Imbalanced Datasets⚙️ Model Training & PerformanceThe model was built using the Hugging Face transformers ecosystem and optimized natively on PyTorch.Training ConfigurationParameterValueBase Modelbert-base-uncasedFramework / LibraryPyTorch & Hugging Face TransformersEpochs3Batch Size8Evaluation MetricsMetricScoreAccuracy95.27%Precision95.21%Recall95.27%F1-Score95.14%📌 Note: Loss values decreased consistently throughout the 3 epochs without signs of overfitting, demonstrating effective convergence.📂 Project StructurePlaintextdark_pattern_detector/
+## 🧠 AI Concepts Implemented
+* **Transfer Learning & BERT Fine-Tuning:** Leveraging pre-trained language representations and optimizing them for task-specific sequence classification.
+* **Subword Tokenization (`BertTokenizer`):** Breaking down text strings into efficient token inputs that capture vocabulary variations cleanly.
+* **Stratified Train-Test Splitting:** Implementing an 80-20 split that strictly preserves the original dataset's percentage of samples for each class.
+* **Weighted Optimization Metrics:** Utilizing loss-weighting mechanics to keep evaluation fair and accurate despite imbalanced class populations.
+
+---
+
+## ⚙️ Model Training & Performance
+
+The model was built using the Hugging Face `transformers` ecosystem and optimized natively on `PyTorch`.
+
+### Training Configuration
+| Parameter | Value |
+| :--- | :--- |
+| **Base Model** | `bert-base-uncased` |
+| **Framework / Library** | PyTorch & Hugging Face Transformers |
+| **Epochs** | 3 |
+| **Batch Size** | 8 |
+
+### Evaluation Metrics
+| Metric | Score |
+| :--- | :--- |
+| **Accuracy** | **95.27%** |
+| **Precision** | **95.21%** |
+| **Recall** | **95.27%** |
+| **F1-Score** | **95.14%** |
+
+> 📌 **Note:** Loss values decreased consistently throughout the 3 training epochs without signs of overfitting, demonstrating highly effective convergence.
+## 📂 Project Structure
+```text
+dark_pattern_detector/
 │
 ├── data/
 │   └── dataset.csv          # Labeled e-commerce text data
@@ -60,9 +91,3 @@ AI Concepts ImplementedTransfer Learning & BERT Fine-TuningSubword Tokenization 
 ├── predict.py               # Inference script for testing custom text strings
 ├── requirements.txt         # Project software dependencies
 └── README.md                # Project documentation
-🛠️ Installation & Usage1. Clone the RepositoryBashgit clone [https://github.com/EmanSheraz/dark_pattern_detector.git](https://github.com/EmanSheraz/dark_pattern_detector.git)
-cd dark_pattern_detector
-2. Install DependenciesBashpip install -r requirements.txt
-3. Train the ModelTo run the full pipeline (data loading, preprocessing, tokenization, fine-tuning, and evaluation):Bashpython train.py
-4. Run Real-Time PredictionsUse the prediction utility script to test custom UI strings against the model:Bashpython predict.py
-Example Input: predict("Hurry! Only 2 items left!")Output: fake_urgency🔮 Future Improvements🧩 Browser Extension Integration: For real-time scanning of live website pages.👁️ OCR-Based Screenshot Detection: Analyzing visual UI layouts alongside text metadata.📊 Explainable AI (XAI): Visualizing specific token attention weights to explain why text was flagged.📈 Dashboard Analytics: Tracking user trends and logging dark pattern counts across popular sites.🛡️ Research & Ethical ImpactThis system contributes toward ethical AI deployment, consumer protection, and digital fairness. By putting automated defensive tools in the hands of everyday web users, this project aims to promote digital transparency and safeguard consumers from predatory online design patterns.Author: Eman SherazProject Type: AI & NLP-Based Final Year ProjectLicense: Educational and Research Use Only
