@@ -1,0 +1,36 @@
+text,true_label,predicted_label,confidence_%,true_class_prob
+Cab Close Payment Failed!×Oops!,normal,fake_urgency,99.9,0.0
+Personalize your doll,disguised_ad,normal,99.9,0.1
+A - HRTC operates around 3158 buses operating across 125 depots and on average 6.05 lacks Kilometer per day.:,disguised_ad,normal,99.9,0.1
+ADD WORLD'S MOST COMFORTABLE CHAIRS,disguised_ad,normal,99.9,0.1
+Shipping Insurance Remove Insurance,hidden_cost,normal,99.9,0.0
+Book Himachal Road Transport Corporation bus tickets online at AbhiBus and save money on your ticket booking today!,disguised_ad,normal,99.9,0.1
+Check out your shopping cart before 12:00 PM to get best deals and discounts,fake_urgency,normal,99.8,0.0
+I will be shopping without a discount.,disguised_ad,normal,99.7,0.2
+Risk-free trial cancellation hurdles apply,disguised_ad,hidden_cost,99.7,0.2
+Purekana LLC is the property of Simply Better Brands Corp. © 2024 The Purekana trademark belongs to Purekana LLC.:,disguised_ad,normal,99.7,0.1
+Did you know that Shaver heads need replacing every 12 - 18 months? Get the Shaver Guard cleaning spray to extend its li...,disguised_ad,normal,99.7,0.2
+We would like to send some awesome offers!,normal,disguised_ad,99.4,0.3
+This product is best in the whole market,fake_urgency,normal,99.3,0.6
+Set SALE Into Summer ,normal,fake_urgency,99.1,0.8
+Spin to unlock your mystery offer,disguised_ad,normal,98.9,1.0
+Sorry this is out of stock. You just missed it.,fake_urgency,normal,97.7,1.4
+Other customers also bought,fake_urgency,disguised_ad,97.0,0.5
+You can also book HRTC tickets offline but reserving a HRTC online booking through AbhiBus can help you to save money on...,disguised_ad,normal,96.9,2.7
+Get Best Price 1 Have a requirement,fake_urgency,normal,95.9,0.1
+Only $10! – but actually more later,hidden_cost,disguised_ad,93.9,1.4
+This offer is only VALID if you add to cart now!,disguised_ad,fake_urgency,93.6,6.0
+Yes! Upgrade my purchase,disguised_ad,normal,92.3,7.3
+Don’t worry. We’ve got your back.,normal,disguised_ad,85.5,13.6
+Prices shown for delivery to JAPAN Change delivery country,normal,hidden_cost,80.5,17.0
+Limited stock replenished after your purchases,disguised_ad,fake_urgency,77.1,21.9
+FREE NECKLACE FOR MOM 01Days 01Hrs 35Mins 02Secs,fake_urgency,normal,76.5,12.5
+75% off Rs,normal,disguised_ad,75.2,21.5
+Complete your purchase within the next 12:18 minutes and receive 10% off,fake_urgency,disguised_ad,74.1,19.1
+Save ₹500 on HRTC Booking Use HRTC bus booking Coupon Code: HRTC500 during ticket booking on AbhiBus and get 10% upto ₹3...,normal,disguised_ad,70.1,18.4
+ADD FOR BETTER RESULTS,disguised_ad,normal,68.2,29.9
+Sign up now and get a free gift Terms and conditions may apply,disguised_ad,normal,65.6,20.7
+This campaign was taken down for content reasons,normal,fake_urgency,63.1,35.5
+Competitor Price: $172.00,disguised_ad,hidden_cost,57.0,40.3
+Order without free membership $69.95,disguised_ad,hidden_cost,54.8,40.5
+In the case of cancellation by 30 minutes 100 percent of the fare would be lost.,normal,disguised_ad,53.1,18.5
