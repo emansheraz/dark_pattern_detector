@@ -24,8 +24,6 @@ from sklearn.metrics import (
 from sklearn.calibration import CalibratedClassifierCV
 
 from transformers import BertTokenizer, BertForSequenceClassification, Trainer, TrainingArguments
-import torch
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 import pickle
 
 # Check GPU availability
@@ -45,11 +43,7 @@ print(f"Using device: {device}\n")
 # STEP 1: Load Dataset
 # -----------------------------
 print("Loading dataset...")
-# Load the balanced dataset created by dataset.py
-df = pd.read_csv("dark_patterns_dataset_clean.csv")
-
-# Keep only needed columns
-df = df[['text', 'label']]
+df = pd.read_csv("dark_patterns_dataset_clean.csv", header=None, names=['text', 'label'])
 
 # Drop empty rows
 df = df.dropna()
@@ -62,16 +56,18 @@ print()
 
 # -----------------------------
 # STEP 2: Encode Labels
-# ============================
+# -----------------------------
 print("Encoding labels...")
 label_encoder = LabelEncoder()
 df['label'] = label_encoder.fit_transform(df['label'])
 
-# Create explicit label mapping (sklearn sorts alphabetically)
+# Sorted alphabetically by sklearn: disguised_ad=0, fake_urgency=1, hidden_cost=2, normal=3
+CLASS_NAMES = sorted(label_encoder.classes_.tolist())
+
 label_mapping = dict(zip(label_encoder.classes_, label_encoder.transform(label_encoder.classes_)))
 print(f"\n🔍 LABEL MAPPING (index -> class name):")
 print(f"   Alphabetical order (how sklearn encodes):")
-for idx, class_name in enumerate(sorted(label_encoder.classes_)):
+for idx, class_name in enumerate(CLASS_NAMES):
     print(f"   {idx} -> '{class_name}'")
 print(f"\nActual mapping used: {label_mapping}\n")
 
@@ -158,29 +154,33 @@ training_args = TrainingArguments(
     report_to="none",
     logging_steps=10,
     seed=42,
-    use_cpu=False if torch.cuda.is_available() else True  # ✅ Enable GPU if available
+    use_cpu=False if torch.cuda.is_available() else True
 )
 
 print(f"✅ Training will use: {device}\n")
 
 # -----------------------------
-# STEP 7: Evaluation Metrics
+# STEP 7: Evaluation Metrics (Per-Class)
 # -----------------------------
 def compute_metrics(pred):
     labels = pred.label_ids
     preds = pred.predictions.argmax(-1)
 
-    precision, recall, f1, _ = precision_recall_fscore_support(
-        labels, preds, average='weighted', zero_division=0
-    )
     acc = accuracy_score(labels, preds)
 
-    return {
-        'accuracy': acc,
-        'f1': f1,
-        'precision': precision,
-        'recall': recall
-    }
+    # average=None returns a per-class array instead of a single weighted scalar
+    precision_per_class, recall_per_class, f1_per_class, _ = precision_recall_fscore_support(
+        labels, preds, average=None, zero_division=0
+    )
+
+    # HuggingFace Trainer requires a flat dict of scalar values — unpack each class
+    metrics = {'accuracy': acc}
+    for i, name in enumerate(CLASS_NAMES):
+        metrics[f'precision_{name}'] = float(precision_per_class[i])
+        metrics[f'recall_{name}']    = float(recall_per_class[i])
+        metrics[f'f1_{name}']        = float(f1_per_class[i])
+
+    return metrics
 
 # -----------------------------
 # STEP 8: Trainer
@@ -203,18 +203,32 @@ print("=" * 60 + "\n")
 
 trainer.train()
 
-# Evaluate
+# -----------------------------
+# EVALUATE
+# -----------------------------
 print("\n" + "=" * 60)
 print("EVALUATING ON TEST SET...")
 print("=" * 60 + "\n")
 
 eval_results = trainer.evaluate()
 
+# -----------------------------
+# PRINT PER-CLASS RESULTS
+# -----------------------------
 print("\nFinal Results:")
-print(f"Accuracy:  {eval_results.get('eval_accuracy', 'N/A'):.4f}")
-print(f"Precision: {eval_results.get('eval_precision', 'N/A'):.4f}")
-print(f"Recall:    {eval_results.get('eval_recall', 'N/A'):.4f}")
-print(f"F1 Score:  {eval_results.get('eval_f1', 'N/A'):.4f}\n")
+print(f"  Accuracy: {eval_results.get('eval_accuracy', 0):.4f}\n")
+
+col_w = 20
+print(f"  {'Class':<{col_w}} {'Precision':>10} {'Recall':>10} {'F1-Score':>10}")
+print("  " + "-" * (col_w + 32))
+
+for name in CLASS_NAMES:
+    p = eval_results.get(f'eval_precision_{name}', 0)
+    r = eval_results.get(f'eval_recall_{name}', 0)
+    f = eval_results.get(f'eval_f1_{name}', 0)
+    print(f"  {name:<{col_w}} {p:>10.4f} {r:>10.4f} {f:>10.4f}")
+
+print()
 
 # -----------------------------
 # STEP 9: Save Model
@@ -234,14 +248,14 @@ print("✅ Tokenizer saved to ./model/tokenizer.pkl")
 label_mapping_info = {
     'classes': label_encoder.classes_.tolist(),
     'label_mapping': label_mapping,
-    'sorted_classes': sorted(label_encoder.classes_)  # Explicit sorted order
+    'sorted_classes': CLASS_NAMES
 }
 with open("model/label_mapping.pkl", "wb") as f:
     pickle.dump(label_mapping_info, f)
 print("✅ Label mapping saved to ./model/label_mapping.pkl")
 print(f"\nSaved mapping info:")
 print(f"  Classes: {label_mapping_info['classes']}")
-print(f"  Sorted: {label_mapping_info['sorted_classes']}")
+print(f"  Sorted:  {label_mapping_info['sorted_classes']}")
 print(f"  Mapping: {label_mapping_info['label_mapping']}")
 
 print("\n✅ All models saved successfully!")

@@ -4,6 +4,9 @@ import torch
 import torch.nn.functional as F
 import pickle
 
+# Set device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 # Load model
 print("Loading model...")
 
