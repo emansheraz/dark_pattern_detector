@@ -1,181 +1,187 @@
 import torch
-from transformers import BertTokenizer, BertForSequenceClassification
-import torch
 import torch.nn.functional as F
-import pickle
 
-# Set device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from transformers import (
+    BertTokenizer,
+    BertForSequenceClassification
+)
 
-# Load model
+# ============================================================
+# DEVICE
+# ============================================================
+device = torch.device(
+    "cuda" if torch.cuda.is_available() else "cpu"
+)
+
+print("=" * 60)
+print("DARK PATTERN DETECTOR")
+print("=" * 60)
+
+print(f"Using device: {device}")
+
+# ============================================================
+# LOAD MODEL
+# ============================================================
+MODEL_PATH = "./model"
+
+print("\nLoading tokenizer...")
+
+tokenizer = BertTokenizer.from_pretrained(
+    MODEL_PATH
+)
+
 print("Loading model...")
 
-# Load model state dict from .pt file
-model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=4)
-model.load_state_dict(torch.load("model/model.pt", map_location="cpu"))
+model = BertForSequenceClassification.from_pretrained(
+    MODEL_PATH
+)
 
-# Load tokenizer from .pkl file
-with open("model/tokenizer.pkl", "rb") as f:
-    tokenizer = pickle.load(f)
+class_names = torch.load(
+    f"{MODEL_PATH}/class_names.pt"
+)
 
-# Load label mapping from .pkl file
-with open("model/label_mapping.pkl", "rb") as f:
-    label_mapping_info = pickle.load(f)
+model.to(device)
 
-# Create explicit mapping: index -> label (using sorted order)
-sorted_classes = label_mapping_info['sorted_classes']
-labels_map = {idx: class_name for idx, class_name in enumerate(sorted_classes)}
-
-# Evaluation mode
 model.eval()
 
-# Descriptions for each category
+print("✅ Model loaded successfully!")
+
+# ============================================================
+# DESCRIPTIONS
+# ============================================================
 descriptions = {
-    "disguised_ad": "📢 This text looks like an ad disguised as organic content",
-    "fake_urgency": "⚠️ This text creates artificial urgency or scarcity",
-    "hidden_cost": "💰 This text hides charges that appear later",
-    "normal": "✅ This text is normal and transparent"
+    "disguised_ad": "📢 Advertisement disguised as normal content",
+    "fake_urgency": "⚠️ Creates fake urgency or pressure",
+    "hidden_cost": "💰 Contains hidden charges or extra fees",
+    "normal": "✅ Normal transparent content"
 }
 
-print(f"✅ Model loaded successfully!")
-print(f"\n🔍 LOADED LABEL MAPPING (index -> class name):")
-for idx, label in labels_map.items():
-    print(f"   {idx} -> '{label}'")
-print(f"\nFull mapping from file: {label_mapping_info['label_mapping']}\n")
-
+# ============================================================
+# PREDICTION FUNCTION
+# ============================================================
 def predict(text):
-    """
-    Predict dark pattern category and return results with confidence
-    """
+
     inputs = tokenizer(
         text,
         return_tensors="pt",
         truncation=True,
         padding=True,
-        max_length=512
+        max_length=64
     )
 
-    # Move tensors to GPU/CPU
     inputs = {
         key: value.to(device)
         for key, value in inputs.items()
     }
 
-    # Disable gradients
     with torch.no_grad():
 
         outputs = model(**inputs)
 
         logits = outputs.logits
-    
-    # Get probabilities using softmax
+
     probabilities = F.softmax(logits, dim=1)
-    
-    # Get predicted class
-    predicted_class_id = torch.argmax(logits, dim=1).item()
-    predicted_label = labels_map[predicted_class_id]
-    
-    # Get confidence score
-    confidence = probabilities[0][predicted_class_id].item() * 100
-    
-    # Get all probabilities
-    all_probs = {}
-    for class_id, label in labels_map.items():
-        prob = probabilities[0][class_id].item() * 100
-        all_probs[label] = prob
-    
+
+    predicted_class_id = torch.argmax(
+        probabilities,
+        dim=1
+    ).item()
+
+    predicted_label = class_names[predicted_class_id]
+
+    confidence = (
+        probabilities[0][predicted_class_id].item() * 100
+    )
+
+    all_probabilities = {}
+
+    for i, label in enumerate(class_names):
+
+        prob = probabilities[0][i].item() * 100
+
+        all_probabilities[label] = round(prob, 2)
+
     return {
-        'prediction': predicted_label,
-        'confidence': confidence,
-        'all_probabilities': all_probs
+        "prediction": predicted_label,
+        "confidence": round(confidence, 2),
+        "all_probabilities": all_probabilities
     }
 
-def print_prediction_result(text, result):
-    """
-    Pretty print prediction results for easy interpretation
-    """
-    prediction = result['prediction']
-    confidence = result['confidence']
-    all_probs = result['all_probabilities']
-    description = descriptions[prediction]
-    
-    # Print the input text
+# ============================================================
+# PRINT FUNCTION
+# ============================================================
+def print_prediction(text, result):
+
+    prediction = result["prediction"]
+
+    confidence = result["confidence"]
+
+    all_probs = result["all_probabilities"]
+
     print("\n" + "=" * 70)
+
     print("📝 INPUT TEXT:")
     print("-" * 70)
+
     print(f'"{text}"')
-    print("=" * 70)
-    
-    # Print main prediction
+
     print("\n🎯 PREDICTION RESULT:")
     print("-" * 70)
-    print(f"Category: {prediction.upper()}")
-    print(f"Confidence: {confidence:.2f}%")
-    print(f"\n{description}")
-    print("=" * 70)
-    
-    # Print all probabilities
-    print("\n📊 DETAILED BREAKDOWN (All Categories):")
+
+    print(f"Category   : {prediction}")
+
+    print(f"Confidence : {confidence:.2f}%")
+
+    print(f"\n{descriptions[prediction]}")
+
+    print("\n📊 ALL CLASS PROBABILITIES:")
     print("-" * 70)
-    
-    # Sort by probability (highest first)
-    sorted_probs = sorted(all_probs.items(), key=lambda x: x[1], reverse=True)
-    
-    for i, (label, prob) in enumerate(sorted_probs):
-        # Add emoji based on position
-        if i == 0:
-            emoji = "🥇"  # Gold medal for top prediction
-        elif i == 1:
-            emoji = "🥈"  # Silver
-        elif i == 2:
-            emoji = "🥉"  # Bronze
-        else:
-            emoji = "  "  # No medal
-        
-        # Create a visual bar
-        bar_length = int(prob / 5)  # Scale to 0-20
-        bar = "█" * bar_length + "░" * (20 - bar_length)
-        
-        print(f"{emoji} {label:15s} {bar} {prob:6.2f}%")
-    
-    print("=" * 70 + "\n")
 
-# Test with sample texts
-print("\n" + "🚀" * 35)
-print("DARK PATTERN DETECTOR - PREDICTION DEMO")
-print("🚀" * 35 + "\n")
+    sorted_probs = sorted(
+        all_probs.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
 
-# Sample test cases
-test_cases = [
-    "Extra charges will be added at checkout",
-    "Only 2 items left in stock!",
-    "Free shipping on orders over $50",
-    "Sponsored products you may like",
-    "Hurry! This offer expires in 1 hour!"
-]
+    for label, prob in sorted_probs:
 
-print("Running predictions on sample texts...\n")
+        bar_length = int(prob / 5)
 
-for text in test_cases:
-    result = predict(text)
-    print_prediction_result(text, result)
+        bar = (
+            "█" * bar_length +
+            "░" * (20 - bar_length)
+        )
 
-# Interactive mode
-print("\n" + "=" * 70)
+        print(
+            f"{label:15s} {bar} {prob:6.2f}%"
+        )
+
+    print("=" * 70)
+
+# ============================================================
+# INTERACTIVE MODE
+# ============================================================
+print("\n" + "=" * 60)
 print("INTERACTIVE MODE")
-print("=" * 70)
-print("Enter your own text to classify (or type 'quit' to exit)\n")
+print("Type 'quit' to exit")
+print("=" * 60)
 
 while True:
-    user_text = input("📝 Enter text: ").strip()
-    
-    if user_text.lower() == 'quit':
-        print("\n✅ Thank you for using Dark Pattern Detector!")
+
+    text = input("\n📝 Enter text: ").strip()
+
+    if text.lower() == "quit":
+
+        print("\n✅ Exiting...")
+
         break
-    
-    if not user_text:
-        print("⚠️ Please enter some text!\n")
+
+    if not text:
+
+        print("⚠️ Empty input!")
+
         continue
-    
-    result = predict(user_text)
-    print_prediction_result(user_text, result)
+
+    result = predict(text)
+
+    print_prediction(text, result)
